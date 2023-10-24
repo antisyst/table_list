@@ -2,102 +2,82 @@ import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { selectUser } from '../redux/userSlice';
+import Pagination from '../components/pagination'; // Import the Pagination component
 
 const TablePage: React.FC = () => {
   const user = useSelector(selectUser);
-  const [tableData, setTableData] = useState<any[]>([]); 
-  const [currentPage, setCurrentPage] = useState(1);
+  const [tableData, setTableData] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 10;
 
   useEffect(() => {
     if (user.isLoggedIn) {
-      fetch('https://jsonplaceholder.typicode.com/users')
-        .then((response) => response.json())
-        .then((data) => {
-          setTableData(data);
-        })
-        .catch((error) => {
-          console.error('Error fetching data:', error);
-        });
+      fetchData();
     }
-  }, [user.isLoggedIn]);
+  }, [user.isLoggedIn, currentPage]);
 
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = tableData.slice(indexOfFirstItem, indexOfLastItem);
+  const fetchData = () => {
+    let url = `https://technical-task-api.icapgroupgmbh.com/api/table/?limit=${itemsPerPage}`;
 
-
-
-  const handleNextPage = () => {
-    if (currentPage < Math.ceil(tableData.length / itemsPerPage)) {
-      setCurrentPage(currentPage + 1);
+    if (currentPage > 0) {
+      url += `&offset=${currentPage * itemsPerPage}`;
     }
+
+    fetch(url)
+      .then((response) => response.json())
+      .then((data) => {
+        setTableData(data.results);
+      })
+      .catch((error) => {
+        console.error('Error fetching data:', error);
+      });
   };
 
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const jumpToPage = (pageNumber: number) => {
-    if (pageNumber > 0 && pageNumber <= Math.ceil(tableData.length / itemsPerPage)) {
-      setCurrentPage(pageNumber);
-    }
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
   };
 
   return (
-    <div className='table_action'>
+    <div className='table_page'>
       <h1>Table Page</h1>
       {user.isLoggedIn ? (
         <div>
-          <Link to="/" className='out_action_button'>Logout</Link>
+          <Link to="/" className='out_action_button'>
+            Logout
+          </Link>
           <div className='table_action'>
-          <table>
-            <thead>
-              <tr>
-                <th>First Name</th>
-                <th>Last Name</th>
-                <th>Email</th>
-                <th>Username</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentItems.map((item, index) => (
-                <tr key={index}>
-                  <td>{item.name}</td>
-                  <td>{item.username}</td>
-                  <td>{item.email}</td>
-                  <td>{item.username}</td>
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Address</th>
+                  <th>Email</th>
+                  <th>Phone Number</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {tableData.map((item: any, index: number) => (
+                  <tr key={index}>
+                    <td>{item.name}</td>
+                    <td>{item.address}</td>
+                    <td>{item.email}</td>
+                    <td>{item.phone_number}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {tableData.length > itemsPerPage && (
+              <Pagination
+                pageCount={Math.ceil(tableData.length / itemsPerPage)}
+                onPageChange={handlePageChange}
+              />
+            )}
           </div>
-          {tableData.length > itemsPerPage && (
-            <div>
-              <ul className="pagination">
-                <li>
-                  <button onClick={handlePrevPage} disabled={currentPage === 1}>
-                    Previous
-                  </button>
-                </li>
-                {Array.from({ length: Math.ceil(tableData.length / itemsPerPage) }, (_, index) => (
-                    <li key={index} className={currentPage === index + 1 ? 'active' : ''}>
-                        <button onClick={() => jumpToPage(index + 1)}>{index + 1}</button>
-                    </li>
-                    ))}
-                <li>
-                  <button onClick={handleNextPage} disabled={currentPage === Math.ceil(tableData.length / itemsPerPage)}>
-                    Next
-                  </button>
-                </li>
-              </ul>
-            </div>
-          )}
         </div>
       ) : (
-        <p>Please <Link to="/">login</Link> to access the table.</p>
+        <p>
+          Please <Link to="/">login</Link> to access the table.
+        </p>
       )}
     </div>
   );
