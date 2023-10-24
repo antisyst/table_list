@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { selectUser } from '../redux/userSlice';
-import Pagination from '../components/pagination'; // Import the Pagination component
+import Pagination from '../components/pagination'; 
 
 const TablePage: React.FC = () => {
   const user = useSelector(selectUser);
